@@ -1,0 +1,61 @@
+  image: maven:3.3-jdk-8
+  pipelines:
+      default:
+          - step:
+              name: Test compilation
+              caches:
+                  - maven
+              script:
+                  - cp settings.xml $HOME/.m2/settings.xml
+                  - mvn install
+                  - mvn sonar:sonar --batch-mode --errors -Dsonar.bitbucket.repoSlug=$BITBUCKET_REPO_SLUG -Dsonar.bitbucket.accountName=$BITBUCKET_REPO_OWNER -Dsonar.bitbucket.oauthClientKey=$OAUTH_CLIENT_KEY -Dsonar.bitbucket.oauthClientSecret=$OAUTH_CLIENT_SECRET -Dsonar.bitbucket.branchName=$BITBUCKET_BRANCH -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.password=$SONAR_PASSWORD -Dsonar.analysis.mode=issues
+
+      branches:
+        develop:
+           - step:
+                name: Deploy to us artifactory
+                caches:
+                  - maven
+                deployment: test
+                script:
+                  - cp settings.xml $HOME/.m2/settings.xml
+                  - mvn install
+                  - mvn deploy -Dusername=${ARTIFACTORY_USERNAME} -Dpassword=${ARTIFACTORY_PASSWORD} -Durl=${ARTIFACTORY_CONTEXT_URL} 
+                artifacts:
+                  - target/*.jar         
+        master:
+           - step:
+                name: Deploy to us artifactory
+                caches:
+                  - maven
+                deployment: staging
+                script:
+                  - cp settings.xml $HOME/.m2/settings.xml
+                  - mvn install
+                  - mvn deploy -Dusername=${ARTIFACTORY_USERNAME} -Dpassword=${ARTIFACTORY_PASSWORD} -Durl=${ARTIFACTORY_CONTEXT_URL} 
+                artifacts:
+                  - target/*.jar        
+        hotfix/*:
+           - step:
+                name: Deploy to us artifactory
+                caches:
+                  - maven
+                deployment: stagingHotfix
+                script:
+                  - cp settings.xml $HOME/.m2/settings.xml
+                  - mvn install
+                  - mvn deploy -Dusername=${ARTIFACTORY_USERNAME} -Dpassword=${ARTIFACTORY_PASSWORD} -Durl=${ARTIFACTORY_CONTEXT_URL} 
+                artifacts:
+                  - target/*.jar        
+        release/*:
+           - step:
+                name: Deploy to us artifactory
+                caches:
+                  - maven
+                deployment: stagingRelease
+                script:
+                  - cp settings.xml $HOME/.m2/settings.xml
+                  - mvn install
+                  - mvn deploy -Dusername=${ARTIFACTORY_USERNAME} -Dpassword=${ARTIFACTORY_PASSWORD} -Durl=${ARTIFACTORY_CONTEXT_URL} 
+                artifacts:
+                  - target/*.jar      

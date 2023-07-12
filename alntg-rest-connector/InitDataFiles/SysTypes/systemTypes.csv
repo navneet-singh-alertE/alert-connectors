@@ -1,0 +1,3 @@
+"systemTypes","3/13/14 4:40 PM"
+"name","description","longDesc","provisioning","createdBy","creationDate","lastUpdateDate","lastUpdatedBy","connectorTypes.connectorType","systems(systems).name","status.id"
+"Rest","Rest Connector","Rest Connector","1","-1",,,,"Rest","Logical",302
