@@ -28,4 +28,5 @@ public class ConnectorOutboundJsonTemplates {
     public void setTemplateJsonString(String templateJsonString) {
         this.templateJsonString = templateJsonString;
     }
+
 }

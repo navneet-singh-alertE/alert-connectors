@@ -104,12 +104,14 @@ public class RestConnectionInterface
 	
 	private Map<String, String> templateJsons = new HashMap();
 	private String multiValSeperator=null;
+	private List<ConnectorOutboundJsonTemplates> connectorOutboundJsonTemplates;
 	 
 	public RestConnectionInterface(){
 		
 	}
 	
-	public RestConnectionInterface(Map<String, String> conParams){
+	public RestConnectionInterface(Map<String, String> conParams,
+								   List<ConnectorOutboundJsonTemplates> connectorOutboundJsonTemplates){
 		logger.debug(CLASS_NAME+" RestConnectionInterface(): Initializing the RestConnectionInterface");
 		if(conParams.get("LogResponse")!=null && !"".equals(conParams.get("LogResponse"))){
 			logResponse = new Boolean(conParams.get("LogResponse"));
@@ -122,13 +124,16 @@ public class RestConnectionInterface
 		if(multiValSeperator==null || multiValSeperator.isEmpty()){
 			multiValSeperator = ";";
 		}
-		
+		this.connectorOutboundJsonTemplates = connectorOutboundJsonTemplates;
 		this.sysConnector=new RestConnector(conParams);
-		init();
-		
 
+		init();
 	}
-	
+
+	public RestConnectionInterface(Map<String, String> conParams){
+		this(conParams, null);
+	}
+
 	public void setConnectorParams(Map<String, String> conParams){
 		logger.debug(CLASS_NAME+" RestConnectionInterface(): Setting connector params");
 		
@@ -156,7 +161,8 @@ public class RestConnectionInterface
 		try{
 			requestResponseHandler= RequestResponseHandlersFactory.getRequestResponseHandler
 					(sysConnector.getFormat(), sysConnector.getConnectorParams());
-			//this.testConnection();
+			this.connectorOutboundJsonTemplates.stream()
+					.forEach(template -> templateJsons.put(template.getTemplateKey(), template.getTemplateJsonString()));
 		}catch(Throwable exc){
 			logger.error(exc);
 		}
