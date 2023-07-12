@@ -1,0 +1,3 @@
+"connectorType","4/13/10 4:40 PM"
+"connectorType","connectorName","connectorClass","connectorClassName","provClassName","extractorClassName"
+"REST","REST","REST","","com.alnt.restconnector.provisioning.services.RestConnectionInterface","com.alnt.restconnector.provisioning.services.RestConnectionInterface"
