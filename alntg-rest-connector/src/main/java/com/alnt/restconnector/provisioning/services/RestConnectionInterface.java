@@ -93,10 +93,10 @@ public class RestConnectionInterface
 			implements IConnectionInterface, IExtractionInterface,ICertificationInterface ,IAgentExtractionInterface,IAgentRoleExtractionInterface{
 
 
-	private IConnector sysConnector=null;
+	protected IConnector sysConnector=null;
 	private  String CLASS_NAME = "com.alnt.ws.provisioning.services.RestConnectionInterface";
 	private Logger logger = LogManager.getLogger(CLASS_NAME);
-	private IRequestResponseHandler requestResponseHandler=null;
+	protected IRequestResponseHandler requestResponseHandler=null;
 	private String permRoleValidTo = "12/30/9999";
 
 	private boolean logResponse=false;
@@ -260,7 +260,7 @@ public class RestConnectionInterface
 			params.put(sysConnector.getUserIdentifierKey(), userId);
 			IResponse response=doReconOperation("User Locked","USER_LOCKED",params);
 			String templateFileName=getTemplateFile("USER_LOCKED");
-			Map<String,Object> responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,response.getResponseObject());
+			Map<String,Object> responseMap=getRequestResponseHandler("USER_LOCKED").buildParamsFromTemplate(templateFileName,response.getResponseObject());
 			
 			String items[]=sysConnector.getLockedAttributeName().split(":");
 			String  matchKey=null;
@@ -296,7 +296,7 @@ public class RestConnectionInterface
 			IResponse response=doReconOperation("Is User provisioned","USER_PROVISIONED",params);
 			if(response!=null) {
 				String templateFileName=getTemplateFile("USER_PROVISIONED");
-				Map<String,Object> responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,response.getResponseObject());
+				Map<String,Object> responseMap=getRequestResponseHandler("USER_PROVISIONED").buildParamsFromTemplate(templateFileName,response.getResponseObject());
 				if(!responseMap.isEmpty())
 					userProvisioned=true;
 			}
@@ -467,7 +467,7 @@ public class RestConnectionInterface
 			sysConnector.executeRequest(method,logURI,logResponse);
 			
 			if (method.getStatusCode() == HttpStatus.SC_OK) {
-					response = requestResponseHandler.handleResponse(method.getResponseBodyAsString());
+					response = getRequestResponseHandler(provisioning_action_code).handleResponse(method.getResponseBodyAsString());
 					logger.debug( actionName + " operation performed successfully...");
 			}
 			
@@ -516,7 +516,7 @@ public class RestConnectionInterface
 			}
 			params.put("Certifications",sb.toString());
 			params.put("template",getTemplateFile(provisioning_action_code));
-			request=requestResponseHandler.handleRequest(params);
+			request=getRequestResponseHandler(provisioning_action_code).handleRequest(params);
 			
 			method.addRequestHeader("Authorization","Bearer "+ sysConnector.getAccessToken());
 			if(method instanceof PostMethod){
@@ -527,7 +527,7 @@ public class RestConnectionInterface
 			sysConnector.executeRequest(method,logURI,logResponse);
 			
 			if (method.getStatusCode() == HttpStatus.SC_OK) {
-					response = requestResponseHandler.handleResponse(method.getResponseBodyAsString());
+					response = getRequestResponseHandler(provisioning_action_code).handleResponse(method.getResponseBodyAsString());
 					logger.debug( actionName + " operation performed successfully...");
 			}else{
 				logger.debug( actionName + " operation not performed successfully. Status code="+method.getStatusCode()+". "+method.getStatusText());
@@ -546,7 +546,7 @@ public class RestConnectionInterface
 	 * user update operations. 
 	 * 
 	 * @param actionName
-	 * @param action_code
+	 * @param provisioning_action_code
 	 * @param success_code
 	 * @param failure_code
 	 */
@@ -590,12 +590,12 @@ public class RestConnectionInterface
 			String request=null;
 			if(method instanceof PostMethod){
 				parameters.put("template", templateFile);
-				request=requestResponseHandler.handleRequest(parameters);
+				request=getRequestResponseHandler(provisioning_action_code).handleRequest(parameters);
 				((PostMethod)method).setRequestEntity(new StringRequestEntity(request,"application/"+sysConnector.getFormat(), null));
 			}else if(method instanceof PutMethod){
 				logger.debug(CLASS_NAME+"doOperation(): Inside PUT method");
 				parameters.put("template", templateFile);
-				request=requestResponseHandler.handleRequest(parameters);
+				request=getRequestResponseHandler(provisioning_action_code).handleRequest(parameters);
 				((PutMethod)method).setRequestEntity(new StringRequestEntity(request,"application/"+sysConnector.getFormat(), null));
 			}
 			
@@ -623,7 +623,7 @@ public class RestConnectionInterface
 	 * 
 	 * @param userId User for which provisioning actions is performed
 	 * @param method HTTPClient method 
-	 * @param provisioningAction Create,Delete,Update user
+	 * @param provisioningActionType Create,Delete,Update user
 	 * @param actionName
 	 * @param successCode 
 	 * @param failureCode
@@ -642,7 +642,8 @@ public class RestConnectionInterface
 				provResult = createProvisioningResult(provisioningActionType,
 						successCode, false, actionName +" successful.");
 				if(provisioningActionType.equalsIgnoreCase(IProvisoiningConstants.PROV_ACTION_CREATE_USER)){
-					IResponse response =requestResponseHandler.handleResponse(method.getResponseBodyAsString());
+					IResponse response =getRequestResponseHandler(provisioningActionType)
+							.handleResponse(method.getResponseBodyAsString());
 					if (response.hasAttribute(sysConnector.getCreatedUserIdentifierKey())) {
 							userId=(String)response.getAttributeValue(sysConnector.getCreatedUserIdentifierKey()).toString();
 							provResult.setUserCreated(true);
@@ -674,7 +675,7 @@ public class RestConnectionInterface
 	/**
 	 *  Create provisioning result
 	 *  
-	 * @param provisioningAction
+	 * @param provisioningActionType
 	 * @param msgCode
 	 * @param isFailed
 	 * @param msgDesc
@@ -694,7 +695,7 @@ public class RestConnectionInterface
 
 	/** Update image to user profile
 	 * 
-	 * @param imageData encoded data bytes of the image
+	 * @param provisioning_action_code encoded data bytes of the image
 	 * @return
 	 */
 	public String provisionImage(Map parameters, 
@@ -743,7 +744,7 @@ public class RestConnectionInterface
 	
 	/** Get Images
 	 * 
-	 * @param imageData encoded data bytes of the image
+	 * @param userId encoded data bytes of the image
 	 * @return
 	 */
 	public byte[] getImage(String userId) {
@@ -763,7 +764,7 @@ public class RestConnectionInterface
 			for(Object imageObj:images){
 				Map<String,Object> responseMap=null;
 					try{
-						responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,imageObj);
+						responseMap=getRequestResponseHandler("GET_IMAGE").buildParamsFromTemplate(templateFileName,imageObj);
 						String imageAttribute=sysConnector.getImageAttributeName();
 						Object value=responseMap.get(imageAttribute);
 						if(value!=null){
@@ -946,7 +947,7 @@ public class RestConnectionInterface
 	/**
 	 * Get all roles assigned to a user
 	 * 
-	 * @param userId
+	 * @param parameters
 	 * @return
 	 * @throws Exception 
 	 */
@@ -958,7 +959,7 @@ public class RestConnectionInterface
 			List<Object> users= response.getValues(sysConnector.getReconUsersTag());
 		 	Object userObj=users.get(0);
 			
-			Object userRoleObj=requestResponseHandler.getAttributeValue(userObj, sysConnector.getRoleIdentifierKey());
+			Object userRoleObj=getRequestResponseHandler("GET_SPECIFIC_USER").getAttributeValue(userObj, sysConnector.getRoleIdentifierKey());
 			ArrayList<String> roleNamesList=new ArrayList();
 			if(userRoleObj instanceof String){
 				roleNamesList.add((String)userRoleObj);
@@ -1265,7 +1266,7 @@ public class RestConnectionInterface
 				for (int i = 0; i < roles.size(); i++) {
 					try{
 						Object roleObj=roles.get(i);
-						responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,roleObj);
+						responseMap=getRequestResponseHandler("GET_INCREMENTAL_ROLES").buildParamsFromTemplate(templateFileName,roleObj);
 					}catch(Exception ex){
 						logger.error("Process Role Information>>Could not generate responseMap from templateFile.",ex);
 					}
@@ -1420,7 +1421,7 @@ public class RestConnectionInterface
 			if (method.getStatusCode() == HttpStatus.SC_OK) {
 					logger.debug( "User "+userId+ " exists...");
 					if(attributeName!=null){
-						IResponse response=requestResponseHandler.handleResponse(method.getResponseBodyAsString());
+						IResponse response=getRequestResponseHandler(provisioningActionCode).handleResponse(method.getResponseBodyAsString());
 						if(response.hasAttribute(attributeName)){
 							String setValue=response.getAttributeValue(attributeName).toString();
 							boolean status= valueToCompare.equals(setValue);
@@ -1472,13 +1473,13 @@ public class RestConnectionInterface
 		
 		try{
 			userInformation = new UserInformation();
-			userID=(String)requestResponseHandler.getAttributeValue(userObj, sysConnector.getUserIdentifierKey());
+			userID=(String)getRequestResponseHandler(userProvisioningAction).getAttributeValue(userObj, sysConnector.getUserIdentifierKey());
 			logger.debug(CLASS_NAME+" Processing User Information for : " + userID);
 			String templateFileName=getTemplateFile(userProvisioningAction);
 			Map<String, Object> userAttributes = new HashMap();
 			Map<String,Object> responseMap=null;
 			try{
-				responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,userObj);
+				responseMap=getRequestResponseHandler(userProvisioningAction).buildParamsFromTemplate(templateFileName,userObj);
 			}catch(Exception ex){
 				logger.error(ex);
 			}
@@ -1515,7 +1516,7 @@ public class RestConnectionInterface
 				allEntitlements.put(userID, entitlements);
 			}
 			if(sysConnector.getBadgeIdentifierKey()!=null && !sysConnector.getBadgeIdentifierKey().isEmpty()){
-				Object userBadgesObj=requestResponseHandler.getAttributeValue(userObj, sysConnector.getBadgeIdentifierKey());
+				Object userBadgesObj=getRequestResponseHandler(badgeProvisioningAction).getAttributeValue(userObj, sysConnector.getBadgeIdentifierKey());
 				entitlements=getUserBadgeEntitlements(userBadgesObj,options, badgeProvisioningAction, params);
 				if(entitlements!=null){
 					allEntitlements.put(userID, entitlements);
@@ -1540,7 +1541,6 @@ public class RestConnectionInterface
 	 * @param options Attributes to be extracted for roles 
 	 * @param roleProvisioningAction 
 	 * @param params
-	 * @param responseMap
 	 * 
 	 * @return User Role Entitlements
 	 */
@@ -1577,7 +1577,7 @@ public class RestConnectionInterface
 							IResponse response=doReconOperation("Get User Role",roleProvisioningAction,map);
 							List<Object> roles=response.getValues(sysConnector.getReconRolesTag());
 							Object roleObj=roles.get(0);
-							Map<String,Object> responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,roleObj);
+							Map<String,Object> responseMap=getRequestResponseHandler(roleProvisioningAction).buildParamsFromTemplate(templateFileName,roleObj);
 							
 							//String[] attributeNames=requestResponseHandler.getAttributeNames(roleObj);
 							Map<String,Object> attributesMap= new HashMap<String,Object>();
@@ -1620,7 +1620,6 @@ public class RestConnectionInterface
 	 * @param options Attributes to be extracted for badges 
 	 * @param badgeProvisioningAction 
 	 * @param params
-	 * @param responseMap
 	 * 
 	 * @return User Badge Entitlements
 	 */
@@ -1654,7 +1653,7 @@ public class RestConnectionInterface
 							IResponse response=doReconOperation("Get User Badge",badgeProvisioningAction,map);
 							List<Object> badges=response.getValues(sysConnector.getReconBadgesTag());
 							Object badgeObj=badges.get(0);
-							Map<String,Object> responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,badgeObj);
+							Map<String,Object> responseMap=getRequestResponseHandler(badgeProvisioningAction).buildParamsFromTemplate(templateFileName,badgeObj);
 							
 							Map<String,Object> attributesMap= new HashMap<String,Object>();
 							for(String attributeName:responseMap.keySet()){
@@ -1684,7 +1683,6 @@ public class RestConnectionInterface
 	 * 
 	 * @param fieldName
 	 * @param fieldValue
-	 * @param extractorAttributesList
 	 * @param userAttr
 	 * @param type
 	 * @return
@@ -2044,8 +2042,7 @@ getIncrementalUsersWithCallback(lastRunDate, options, fetchSize, searchCriteria,
 
 	/**
 	 * Get template file from given template name. The file is located in templates directory
-	 * 
-	 * @param templateName
+	 *
 	 * @return
 	 * @throws Exception
 	 */
@@ -2148,7 +2145,7 @@ getIncrementalUsersWithCallback(lastRunDate, options, fetchSize, searchCriteria,
 			return url;
 		}
 
-	public IRequestResponseHandler getRequestResponseHandler() {
+	public IRequestResponseHandler getRequestResponseHandler(String action) {
 		return this.requestResponseHandler;
 	}
 	
@@ -2174,7 +2171,7 @@ getIncrementalUsersWithCallback(lastRunDate, options, fetchSize, searchCriteria,
 		//IResponse response = requestResponseHandler.handleResponse(testResponse);
 		String templateFileName = getTemplateFile("EVALUATE_CERTIFICATES_RESPONSE");
 		if (templateFileName == null) return null;
-		Map<String,Object> responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,response.getResponseObject());
+		Map<String,Object> responseMap=getRequestResponseHandler("EVALUATE_CERTIFICATES_REQUEST").buildParamsFromTemplate(templateFileName,response.getResponseObject());
 		
 		//Iterate response xml and check for training name whether response object contains training name or not		
         certificationList = parseTrainingRespsonse(responseMap, userCertResult);    
@@ -2432,7 +2429,6 @@ getIncrementalUsersWithCallback(lastRunDate, options, fetchSize, searchCriteria,
 	 * 
 	 * @param userObj
 	 * @param options
-	 * @param string
 	 * 
 	 * @return User Certification object
 	 */
@@ -2445,13 +2441,13 @@ getIncrementalUsersWithCallback(lastRunDate, options, fetchSize, searchCriteria,
 		try{
 			
 			userCertInformation = new UserCertificationInformation();
-			userID=(String)requestResponseHandler.getAttributeValue(userObj, sysConnector.getUserIdentifierKey());
+			userID=(String)getRequestResponseHandler(userProvisioningAction).getAttributeValue(userObj, sysConnector.getUserIdentifierKey());
 			logger.debug(CLASS_NAME+" Processing User Certification Information for : " + userID);
 			String templateFileName=getTemplateFile(userProvisioningAction);
 			Map<String, Object> userAttributes = new HashMap();
 			Map<String,Object> responseMap=null;
 			try{
-				responseMap=requestResponseHandler.buildParamsFromTemplate(templateFileName,userObj);
+				responseMap=getRequestResponseHandler(userProvisioningAction).buildParamsFromTemplate(templateFileName,userObj);
 			}catch(Exception ex){
 				logger.error(ex);
 			}
@@ -2531,8 +2527,7 @@ getIncrementalUsersWithCallback(lastRunDate, options, fetchSize, searchCriteria,
 
 	/**
 	 * Format Attribute based on extraction attribute
-	 * 
-	 * @param extractorAttributes
+	 *
 	 * @param paramName
 	 * @param value
 	 * @return
@@ -2698,7 +2693,5 @@ getIncrementalUsersWithCallback(lastRunDate, options, fetchSize, searchCriteria,
 				logger.trace(CLASS_NAME+ "setSystemParameters(): Setting javax.net.ssl.trustStorePassword");
 			}
 		}		
-	} 
-	
-	
+	}
 }

@@ -13,6 +13,8 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.alnt.access.provisioning.services.RESTTransformationMapper;
+import com.alnt.access.provisioning.services.TypesFieldMappingsSet;
 import com.alnt.restconnector.provisioning.utils.*;
 //import com.jayway.jsonpath.JsonPath;
 
@@ -31,7 +33,7 @@ public class JSONRequestResponseHandler implements IRequestResponseHandler {
     private JSONProvisioningParser provisioningParser = null;
     private JSONReconParser reconParser = null;
     private Map connectorParams=null;
-    private  Map <String,String> templateCache=new HashMap();
+    private  Map <String,String> templates = new HashMap();
     private  final static String CLASS_NAME = "com.alnt.restconnector.provisioning.commons.JSONRequestResponseHandler";
     private Logger logger = LogManager.getLogger(CLASS_NAME);
     //private String roleIdentifier=null;
@@ -48,9 +50,12 @@ public class JSONRequestResponseHandler implements IRequestResponseHandler {
        reconParser.initialize(JSONProvisioningParser.class.getClassLoader().getResourceAsStream("com/json/config/json-config.xml"));
        reconParser.setValidating(false);
     }
-    
 
-	
+	public JSONRequestResponseHandler(Map connectorParams, Map<String, String> templates){
+		this(connectorParams);
+		this.templates = templates;
+	}
+
 	public void setConnectorParams(Map connectorParams) {
 		this.connectorParams=connectorParams;
 		provisioningParser.setConnectorParams(connectorParams);
@@ -97,7 +102,6 @@ public class JSONRequestResponseHandler implements IRequestResponseHandler {
 		return new JSONObject(finalJsonData);
 	}
 
-	
 	public Map<String,Object> buildParamsFromTemplate(String templateFileName, Object responseObject) throws Exception{
 		String content=getTemplate(templateFileName);
 		if(content==null || content.isEmpty()){
@@ -114,11 +118,11 @@ public class JSONRequestResponseHandler implements IRequestResponseHandler {
 	/**
 	 * Get template content. 
 	 * 
-	 * @param fileName
+	 * @param templateKey
 	 * @return
 	 */
-	public String getTemplate(String fileName){
-			if(templateCache.get(fileName)==null){
+	public String getTemplate(String templateKey){
+			/*if(templates.get(templateKey)==null){
 			    StringBuilder builder = new StringBuilder();
 			    BufferedReader br=null;
 				try {
@@ -139,16 +143,16 @@ public class JSONRequestResponseHandler implements IRequestResponseHandler {
 						}
 				}
 			   String content=builder.toString();
-			   templateCache.put(fileName, content);
-			}
-			return  templateCache.get(fileName);
+				templates.put(templateKey, content);
+			}*/
+			return templates.get(templateKey);
 	}
 	
 	/**
 	 * Get the value from the json object based on fieldName
 	 * 
 	 * @param dataString json response
-	 * @param fieldName fieldName for which value needs to be extracted from data
+	 * @param attrName fieldName for which value needs to be extracted from data
 	 * 
 	 * @return value of the extracted field
 	 */

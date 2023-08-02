@@ -32,7 +32,7 @@ import com.alnt.restconnector.provisioning.utils.XMLProvisioningParser;
 	      private XMLProvisioningParser provisioningParser = null;
 	      private XMLReconParser reconParser = null;
 	      private Map connectorParams=null;
-	      private  Map <String,String> templateCache=new HashMap();
+	      private  Map <String,String> templates = new HashMap();
 	  	  private Logger logger = LogManager.getLogger(CLASS_NAME);
 	    
 	    //private String roleIdentifier=null;
@@ -44,7 +44,11 @@ import com.alnt.restconnector.provisioning.utils.XMLProvisioningParser;
 	       reconParser = factory.getXMLReconParser();
 	       reconParser.setConnectorParams(connectorParams);
 	    }
-	    
+
+		public XMLRequestResponseHandler(Map connectorParams, Map<String, String> templates){
+			this(connectorParams);
+			this.templates = templates;
+		}
 
 		
 		public void setConnectorParams(Map connectorParams) {
@@ -112,11 +116,11 @@ import com.alnt.restconnector.provisioning.utils.XMLProvisioningParser;
 		/**
 		 * Get template content. 
 		 * 
-		 * @param fileName
+		 * @param templateKey
 		 * @return
 		 */
-		public String getTemplate(String fileName){
-			if(templateCache.get(fileName)==null){
+		public String getTemplate(String templateKey){
+			/*if(templates.get(fileName)==null){
 			    StringBuilder builder = new StringBuilder();
 			    BufferedReader br=null;
 				try {
@@ -137,16 +141,16 @@ import com.alnt.restconnector.provisioning.utils.XMLProvisioningParser;
 						}
 				}
 			   String content=builder.toString();
-			   templateCache.put(fileName, content);
-			}
-			return  templateCache.get(fileName);
+				templates.put(fileName, content);
+			}*/
+			return  templates.get(templateKey);
 	}
 		
 		/**
 		 * Get the value from the xml object based on fieldName
 		 * 
 		 * @param dataString xml response
-		 * @param fieldName fieldName for which value needs to be extracted from data
+		 * @param attrName fieldName for which value needs to be extracted from data
 		 * 
 		 * @return value of the extracted field
 		 */
